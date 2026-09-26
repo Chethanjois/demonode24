@@ -1,6 +1,9 @@
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 
+const request = require('supertest');
+const { createApp } = require('../src/app');
+
 const app = createApp();
 
 describe('GET /', () => {

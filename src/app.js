@@ -21,4 +21,14 @@ export function createApp() {
   });
 
   return app;
+
+  const express = require('express');
+
+function createApp() {
+  const app = express();
+  // ... same as before
+  return app;
+}
+
+module.exports = { createApp };
 }
