@@ -48,7 +48,7 @@ jobs:
             exit 1
           fi
 
-   set-matrix:
+  set-matrix:
     name: Derive Node version matrix
     needs: validate-branch-name
     runs-on: ubuntu-latest
