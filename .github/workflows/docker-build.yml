@@ -16,7 +16,7 @@ jobs:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
     env:
-      DOCKERHUB_REPOSITORY: gitactionsdemo
+      DOCKERHUB_REPOSITORY: chethankv/gitactionsdemo
 
     steps:
       - name: Checkout
