@@ -76,11 +76,13 @@ jobs:
   call-unit-test:
     name: Unit Test
     needs: build
+    if: needs.build.result == 'success'
     uses: ./.github/workflows/unit-test.yml
 
   call-docker-build:
     name: Docker Build
     needs: call-unit-test
+    if: needs.call-unit-test.result == 'success'
     uses: ./.github/workflows/docker-build.yml
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
