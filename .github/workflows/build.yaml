@@ -39,7 +39,7 @@ jobs:
             echo "✅ Branch '$BRANCH_NAME' is valid (feature/US...)."
           elif [[ "$BRANCH_NAME" =~ ^feature/de[A-Za-z0-9_-]+$ ]]; then
             echo "✅ Branch '$BRANCH_NAME' is valid (feature/de...)."
-             elif [[ "$BRANCH_NAME" ="feature/test-ci"]]; then
+           elif [[ "$BRANCH_NAME" == "feature/test-ci" ]]; then
             echo "✅ Branch '$BRANCH_NAME' is valid (feature/test-ci)."
           else
             echo "❌ Branch '$BRANCH_NAME' does not follow the naming convention."
