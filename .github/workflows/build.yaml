@@ -48,8 +48,8 @@ jobs:
             exit 1
           fi
 
-  set-matrix:
-    name: Read Node versions from package.json
+   set-matrix:
+    name: Derive Node version matrix
     needs: validate-branch-name
     runs-on: ubuntu-latest
     outputs:
@@ -58,11 +58,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Read Node versions from package.json
+      - name: Extract major version from package.json engines.node and build matrix
         id: get-versions
         run: |
-          VERSIONS=$(node -p "JSON.stringify(require('./package.json').engines.node)")
-          echo "Detected versions: $VERSIONS"
+          ENGINE_VERSION=$(node -p "require('./package.json').engines.node")
+          echo "engines.node in package.json: $ENGINE_VERSION"
+
+          MAJOR_VERSION=$(echo "$ENGINE_VERSION" | grep -oE '[0-9]+' | head -1)
+          echo "Detected major version: $MAJOR_VERSION"
+
+          if [ "$MAJOR_VERSION" == "24" ]; then
+            VERSIONS="[24]"
+          else
+            VERSIONS="[$MAJOR_VERSION,24]"
+          fi
+
+          echo "Final matrix versions: $VERSIONS"
           echo "versions=$VERSIONS" >> "$GITHUB_OUTPUT"
 
   build:
