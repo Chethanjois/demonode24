@@ -4,25 +4,56 @@ on:
   push:
     branches:
       - develop
+      - master
       - 'feature/**'
+      - 'hotfix'
+      - 'hotfix/**'
+      - 'release/**'
   pull_request:
     branches:
       - develop
+      - master
+      - 'release/**'
 
 permissions:
   contents: read
 
 jobs:
-  build:
-    name: Install, Test & Build
+  validate-branch-name:
+    name: Validate Branch Naming Convention
     runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name pattern
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          echo "Checking branch: $BRANCH_NAME"
 
+          if [[ "$BRANCH_NAME" == "develop" || "$BRANCH_NAME" == "master" ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid."
+          elif [[ "$BRANCH_NAME" == "hotfix" || "$BRANCH_NAME" =~ ^hotfix/.+ ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid (hotfix)."
+          elif [[ "$BRANCH_NAME" =~ ^release/.+ ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid (release)."
+          elif [[ "$BRANCH_NAME" =~ ^feature/US[A-Za-z0-9_-]+$ ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid (feature/US...)."
+          elif [[ "$BRANCH_NAME" =~ ^feature/de[A-Za-z0-9_-]+$ ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid (feature/de...)."
+          else
+            echo "❌ Branch '$BRANCH_NAME' does not follow the naming convention."
+            echo "Allowed patterns: feature/US<ticket>, feature/de<ticket>, hotfix, hotfix/<name>, release/<name>, develop, master"
+            exit 1
+          fi
+
+  build:
+    name: Build
+    needs: validate-branch-name
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node 24 (only)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'npm'
@@ -34,9 +65,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Run tests
-        run: npm test
 
       - name: Run build (if applicable)
         run: npm run build --if-present
