@@ -1,6 +1,6 @@
-import express from 'express';
+const express = require('express');
 
-export function createApp() {
+function createApp() {
   const app = express();
   app.use(express.json());
 
@@ -22,3 +22,5 @@ export function createApp() {
 
   return app;
 }
+
+module.exports = { createApp };

@@ -1,5 +1,5 @@
-import request from 'supertest';
-import { createApp } from '../src/app.js';
+const request = require('supertest');
+const { createApp } = require('../src/app');
 
 const app = createApp();
 
@@ -16,6 +16,14 @@ describe('GET /health', () => {
     const res = await request(app).get('/health');
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe('ok');
+  });
+});
+
+describe('GET /version', () => {
+  it('returns the node version', async () => {
+    const res = await request(app).get('/version');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.node).toBe(process.version);
   });
 });
 
