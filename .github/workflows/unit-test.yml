@@ -1,14 +1,10 @@
 name: Unit Test
 
 on:
-  workflow_run:
-    workflows: ["Build"]
-    types:
-      - completed
+  workflow_call:
 
 permissions:
   contents: read
-  actions: read
 
 jobs:
   unit-test:
@@ -39,3 +35,4 @@ jobs:
         with:
           name: coverage-report
           path: coverage/
+          

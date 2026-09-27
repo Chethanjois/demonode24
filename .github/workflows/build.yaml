@@ -5,8 +5,9 @@ on:
     branches:
       - develop
       - master
-      - feature/test-ci
-      - 'feature/**'
+      - 'feature/test-ci'
+      - 'feature/US*'
+      - 'feature/de*'
       - 'hotfix'
       - 'hotfix/**'
       - 'release/**'
@@ -31,6 +32,8 @@ jobs:
 
           if [[ "$BRANCH_NAME" == "develop" || "$BRANCH_NAME" == "master" ]]; then
             echo "✅ Branch '$BRANCH_NAME' is valid."
+          elif [[ "$BRANCH_NAME" == "feature/test-ci" ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid (feature/test-ci)."
           elif [[ "$BRANCH_NAME" == "hotfix" || "$BRANCH_NAME" =~ ^hotfix/.+ ]]; then
             echo "✅ Branch '$BRANCH_NAME' is valid (hotfix)."
           elif [[ "$BRANCH_NAME" =~ ^release/.+ ]]; then
@@ -39,11 +42,9 @@ jobs:
             echo "✅ Branch '$BRANCH_NAME' is valid (feature/US...)."
           elif [[ "$BRANCH_NAME" =~ ^feature/de[A-Za-z0-9_-]+$ ]]; then
             echo "✅ Branch '$BRANCH_NAME' is valid (feature/de...)."
-           elif [[ "$BRANCH_NAME" == "feature/test-ci" ]]; then
-            echo "✅ Branch '$BRANCH_NAME' is valid (feature/test-ci)."
           else
             echo "❌ Branch '$BRANCH_NAME' does not follow the naming convention."
-            echo "Allowed patterns: feature/US<ticket>, feature/de<ticket>, hotfix, hotfix/<name>, release/<name>, develop, master"
+            echo "Allowed patterns: feature/test-ci, feature/US<ticket>, feature/de<ticket>, hotfix, hotfix/<name>, release/<name>, develop, master"
             exit 1
           fi
 
@@ -71,3 +72,16 @@ jobs:
 
       - name: Run build (if applicable)
         run: npm run build --if-present
+
+  call-unit-test:
+    name: Unit Test
+    needs: build
+    uses: ./.github/workflows/unit-test.yml
+
+  call-docker-build:
+    name: Docker Build
+    needs: call-unit-test
+    uses: ./.github/workflows/docker-build.yml
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
