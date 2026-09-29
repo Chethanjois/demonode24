@@ -7,7 +7,9 @@ on:
       - master
       - 'feature/test-ci'
       - 'feature/US*'
+      - 'feature/us*'
       - 'feature/de*'
+      - 'feature/DE*'
       - 'hotfix'
       - 'hotfix/**'
       - 'release/**'
@@ -22,82 +24,27 @@ permissions:
 
 jobs:
   validate-branch-name:
-    name: Validate Branch Naming Convention
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check branch name pattern
-        run: |
-          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-          echo "Checking branch: $BRANCH_NAME"
-
-          if [[ "$BRANCH_NAME" == "develop" || "$BRANCH_NAME" == "master" ]]; then
-            echo "✅ Branch '$BRANCH_NAME' is valid."
-          elif [[ "$BRANCH_NAME" == "feature/test-ci" ]]; then
-            echo "✅ Branch '$BRANCH_NAME' is valid (feature/test-ci)."
-          elif [[ "$BRANCH_NAME" == "hotfix" || "$BRANCH_NAME" =~ ^hotfix/.+ ]]; then
-            echo "✅ Branch '$BRANCH_NAME' is valid (hotfix)."
-          elif [[ "$BRANCH_NAME" =~ ^release/.+ ]]; then
-            echo "✅ Branch '$BRANCH_NAME' is valid (release)."
-          elif [[ "$BRANCH_NAME" =~ ^feature/US[A-Za-z0-9_-]+$ ]]; then
-            echo "✅ Branch '$BRANCH_NAME' is valid (feature/US...)."
-          elif [[ "$BRANCH_NAME" =~ ^feature/de[A-Za-z0-9_-]+$ ]]; then
-            echo "✅ Branch '$BRANCH_NAME' is valid (feature/de...)."
-          else
-            echo "❌ Branch '$BRANCH_NAME' does not follow the naming convention."
-            echo "Allowed patterns: feature/test-ci, feature/US<ticket>, feature/de<ticket>, hotfix, hotfix/<name>, release/<name>, develop, master"
-            exit 1
-          fi
-
-  set-matrix:
-    name: Derive Node version matrix
-    needs: validate-branch-name
-    runs-on: ubuntu-latest
-    outputs:
-      versions: ${{ steps.get-versions.outputs.versions }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Extract major version from package.json engines.node and build matrix
-        id: get-versions
-        run: |
-          ENGINE_VERSION=$(node -p "require('./package.json').engines.node")
-          echo "engines.node in package.json: $ENGINE_VERSION"
-
-          MAJOR_VERSION=$(echo "$ENGINE_VERSION" | grep -oE '[0-9]+' | head -1)
-          echo "Detected major version: $MAJOR_VERSION"
-
-          if [ "$MAJOR_VERSION" == "24" ]; then
-            VERSIONS="[24]"
-          else
-            VERSIONS="[$MAJOR_VERSION,24]"
-          fi
-
-          echo "Final matrix versions: $VERSIONS"
-          echo "versions=$VERSIONS" >> "$GITHUB_OUTPUT"
+    name: Validate Branch Name
+    uses: ./.github/workflows/validate-branch-name.yml
 
   build:
-    name: Build (Node ${{ matrix.node-version }})
-    needs: set-matrix
+    name: Build
+    needs: validate-branch-name
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ${{ fromJson(needs.set-matrix.outputs.versions) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Node ${{ matrix.node-version }}
+      - name: Setup Node 24 (only)
         uses: actions/setup-node@v7
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '24'
           cache: 'npm'
 
       - name: Verify Node version
         run: |
           node -v
-          echo "Expected Node ${{ matrix.node-version }}.x, got $(node -v)"
+          echo "Expected Node 24.x, got $(node -v)"
 
       - name: Install dependencies
         run: npm ci
@@ -108,11 +55,13 @@ jobs:
   call-unit-test:
     name: Unit Test
     needs: build
+    if: needs.build.result == 'success'
     uses: ./.github/workflows/unit-test.yml
 
   call-docker-build:
     name: Docker Build
     needs: call-unit-test
+    if: needs.call-unit-test.result == 'success'
     uses: ./.github/workflows/docker-build.yml
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}

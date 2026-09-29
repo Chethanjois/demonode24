@@ -1,0 +1,34 @@
+name: Validate Branch Name
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Branch Naming Convention
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name pattern
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          BRANCH_LC="${BRANCH_NAME,,}"   # case-insensitive matching
+          echo "Checking branch: $BRANCH_NAME"
+
+          if [[ "$BRANCH_LC" == "develop" || "$BRANCH_LC" == "master" ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid."
+          elif [[ "$BRANCH_LC" == "feature/test-ci" ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid (feature/test-ci)."
+          elif [[ "$BRANCH_LC" == "hotfix" || "$BRANCH_LC" =~ ^hotfix/.+ ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid (hotfix)."
+          elif [[ "$BRANCH_LC" =~ ^release/.+ ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid (release)."
+          elif [[ "$BRANCH_LC" =~ ^feature/(us|de)[a-z0-9_-]+$ ]]; then
+            echo "✅ Branch '$BRANCH_NAME' is valid (feature/US or feature/DE)."
+          else
+            echo "❌ Branch '$BRANCH_NAME' does not follow the naming convention."
+            echo "Allowed patterns: feature/test-ci, feature/US<ticket>, feature/DE<ticket>, hotfix, hotfix/<name>, release/<name>, develop, master (case-insensitive)"
+            exit 1
+          fi
